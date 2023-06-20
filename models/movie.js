@@ -16,7 +16,7 @@ mongoose
 
 // create mongoose schema for movies
 const movieSchema = new mongoose.Schema({
-  title: String,
+  title: { type: String, required: true, minLength: 2 },
   watchList: Boolean,
 });
 
@@ -27,6 +27,5 @@ movieSchema.set("toJSON", {
     delete ret.__v;
   },
 });
-
 // create mongoose Movie Model
 module.exports = mongoose.model("Movie", movieSchema);

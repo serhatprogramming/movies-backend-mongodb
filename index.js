@@ -24,6 +24,8 @@ const errorHandler = (error, request, response, next) => {
   console.error("error message:", error.message);
   if (error.name === "CastError") {
     return response.status(400).json({ error: "invalid id" });
+  } else if (error.name === "ValidationError") {
+    return response.status(400).json({ error: error.message });
   }
   next(error);
 };
@@ -61,14 +63,18 @@ app.delete("/api/movies/:id", async (req, res, next) => {
   }
 });
 
-app.post("/api/movies", async (req, res) => {
+app.post("/api/movies", async (req, res, next) => {
   const { title, watchList } = req.body;
-  if (!title) {
-    return res.status(400).json({ error: "Title is required" });
+  try {
+    if (!title) {
+      return res.status(400).json({ error: "Title is required" });
+    }
+    const movie = new Movie({ title: title, watchList: watchList || false });
+    const savedMovie = await movie.save();
+    res.json(savedMovie);
+  } catch (error) {
+    next(error);
   }
-  const movie = new Movie({ title: title, watchList: watchList || false });
-  const savedMovie = await movie.save();
-  res.json(savedMovie);
 });
 
 app.put("/api/movies/:id", async (req, res, next) => {
@@ -77,7 +83,7 @@ app.put("/api/movies/:id", async (req, res, next) => {
     const updatedMovie = await Movie.findByIdAndUpdate(
       req.params.id,
       { title, watchList },
-      { new: true }
+      { new: true, runValidators: true }
     );
     res.json(updatedMovie);
   } catch (error) {
