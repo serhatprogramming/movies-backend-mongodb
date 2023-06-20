@@ -1,3 +1,7 @@
+// require movie model
+const Movie = require("./models/movie");
+require("dotenv").config();
+// express
 const express = require("express");
 const app = express();
 const cors = require("cors");
@@ -6,30 +10,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("build"));
 
-let movies = [
-  {
-    id: 1,
-    title: "The Godfather",
-    watchList: true,
-  },
-  {
-    id: 2,
-    title: "The Shawshank Redemption",
-    watchList: false,
-  },
-  {
-    id: 3,
-    title: "The Lord of the Rings: The Return of the King",
-    watchList: true,
-  },
-];
-
-app.get("/api/movies", (req, res) => {
+app.get("/api/movies", async (req, res) => {
+  const movies = await Movie.find({});
   res.json(movies);
 });
 
-app.get("/api/movies/:id", (req, res) => {
-  const movie = movies.find((movie) => movie.id === Number(req.params.id));
+app.get("/api/movies/:id", async (req, res) => {
+  const movie = await Movie.findById(req.params.id);
   if (!movie) {
     res.status(404).json({ error: "Movie not found" });
   } else {
@@ -47,18 +34,15 @@ app.delete("/api/movies/:id", (req, res) => {
   }
 });
 
-app.post("/api/movies", (req, res) => {
+app.post("/api/movies", async (req, res) => {
   const { title, watchList } = req.body;
   if (!title) {
     return res.status(400).json({ error: "Title is required" });
   }
-  const newMovie = {
-    id: `${Date.now()}${Math.floor(Math.random() * 10000)}`,
-    title,
-    watchList: watchList || false,
-  };
-  movies.push(newMovie);
-  res.status(201).json(newMovie);
+  console.log("watchList: ", watchList); //
+  const movie = new Movie({ title: title, watchList: watchList || false });
+  const savedMovie = await movie.save();
+  res.json(savedMovie);
 });
 
 const port = process.env.PORT || 3001;
